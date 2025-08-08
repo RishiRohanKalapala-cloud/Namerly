@@ -1,25 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Namerly</title>
-  <style>
-    body {
-      background-color: #f4f4f4;
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    h1 {
-      color: #333;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Startup Name Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    </style>
 </head>
-<body>
-  <h1>Hello, World!</h1>
+<body class="bg-white min-h-screen font-sans">
+    <div class="container mx-auto px-4 py-12 max-w-4xl">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-black mb-4">Startup Name Generator</h1>
+            <p class="text-gray-600 max-w-lg mx-auto">Generate unique, creative names for your next big venture. Perfect for tech startups, apps, and innovative products.</p>
+        </header>
+
+        <!-- Generator Section -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+            <div class="flex flex-col md:flex-row gap-4 mb-6">
+                <div class="flex-1">
+                    <label for="keywords" class="block text-sm font-medium text-gray-700 mb-1">Keywords (comma separated)</label>
+                    <input type="text" id="keywords" placeholder="tech, cloud, ai, future" 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent">
+                </div>
+                <div class="w-full md:w-48">
+                    <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+                    <select id="quantity" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent">
+                        <option value="5">5 names</option>
+                        <option value="10" selected>10 names</option>
+                        <option value="20">20 names</option>
+                    </select>
+                </div>
+            </div>
+            <button id="generateBtn" class="w-full bg-black text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-800 transition duration-200 flex items-center justify-center gap-2">
+                <i class="fas fa-bolt"></i> Generate Names
+            </button>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsContainer" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-900">Generated Names</h2>
+                <button id="copyAllBtn" class="text-sm text-gray-600 hover:text-black flex items-center gap-1">
+                    <i class="fas fa-copy"></i> Copy All
+                </button>
+            </div>
+            <div id="results" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="hidden text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-black mb-4"></div>
+            <p class="text-gray-600">Generating creative names...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="text-center py-12 border-2 border-dashed border-gray-200 rounded-xl">
+            <i class="fas fa-lightbulb text-4xl text-gray-300 mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-700 mb-2">No names generated yet</h3>
+            <p class="text-gray-500 max-w-md mx-auto">Enter some keywords and click "Generate Names" to get started.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const generateBtn = document.getElementById('generateBtn');
+            const keywordsInput = document.getElementById('keywords');
+            const quantitySelect = document.getElementById('quantity');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const resultsDiv = document.getElementById('results');
+            const loadingDiv = document.getElementById('loading');
+            const emptyState = document.getElementById('emptyState');
+            const copyAllBtn = document.getElementById('copyAllBtn');
+
+            // Sample name parts for generation
+            const prefixes = ['Nova', 'Quantum', 'Zen', 'Hyper', 'Omni', 'Neo', 'Vertex', 'Stellar', 'Apex', 'Vortex', 'Lumen', 'Strive', 'Pulse', 'Nimbus', 'Orbit'];
+            const suffixes = ['Tech', 'Labs', 'Systems', 'Logic', 'Works', 'Forge', 'Ventures', 'Nest', 'Sphere', 'Core', 'Hive', 'Flow', 'Grid', 'Wave', 'Sync'];
+            const techWords = ['AI', 'Cloud', 'Data', 'Code', 'Bit', 'Byte', 'Stack', 'Net', 'Bot', 'App', 'Soft', 'Hard', 'Web', 'Cyber', 'Smart'];
+
+            generateBtn.addEventListener('click', generateNames);
+            copyAllBtn.addEventListener('click', copyAllNames);
+
+            function generateNames() {
+                const keywords = keywordsInput.value.trim();
+                const quantity = parseInt(quantitySelect.value);
+                
+                // Show loading state
+                loadingDiv.classList.remove('hidden');
+                resultsContainer.classList.add('hidden');
+                emptyState.classList.add('hidden');
+                
+                // Simulate API call with timeout
+                setTimeout(() => {
+                    loadingDiv.classList.add('hidden');
+                    
+                    if (!keywords) {
+                        emptyState.classList.remove('hidden');
+                        return;
+                    }
+                    
+                    // Clear previous results
+                    resultsDiv.innerHTML = '';
+                    
+                    // Generate names
+                    const generatedNames = [];
+                    const userKeywords = keywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
+                    
+                    for (let i = 0; i < quantity; i++) {
+                        const nameParts = [
+                            ...userKeywords,
+                            ...prefixes[Math.floor(Math.random() * prefixes.length)],
+                            ...suffixes[Math.floor(Math.random() * suffixes.length)],
+                            ...techWords[Math.floor(Math.random() * techWords.length)]
+                        ];
+                        
+                        // Create different name combinations
+                        let name;
+                        const comboType = Math.floor(Math.random() * 4);
+                        
+                        switch(comboType) {
+                            case 0:
+                                name = `${prefixes[Math.floor(Math.random() * prefixes.length)]}${suffixes[Math.floor(Math.random() * suffixes.length)]}`;
+                                break;
+                            case 1:
+                                name = `${userKeywords[Math.floor(Math.random() * userKeywords.length)]}${techWords[Math.floor(Math.random() * techWords.length)]}`;
+                                break;
+                            case 2:
+                                name = `${prefixes[Math.floor(Math.random() * prefixes.length)]} ${userKeywords[Math.floor(Math.random() * userKeywords.length)]}`;
+                                break;
+                            default:
+                                name = `${userKeywords[Math.floor(Math.random() * userKeywords.length)]}${suffixes[Math.floor(Math.random() * suffixes.length)]}`;
+                        }
+                        
+                        // Ensure uniqueness
+                        if (!generatedNames.includes(name)) {
+                            generatedNames.push(name);
+                            
+                            // Create name card
+                            const nameCard = document.createElement('div');
+                            nameCard.className = 'bg-white border border-gray-200 rounded-lg p-4 flex justify-between items-center fade-in';
+                            nameCard.innerHTML = `
+                                <span class="font-medium text-gray-900">${name}</span>
+                                <button class="copy-btn text-gray-400 hover:text-black" data-name="${name}">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            `;
+                            resultsDiv.appendChild(nameCard);
+                        } else {
+                            i--; // Try again if name is duplicate
+                        }
+                    }
+                    
+                    // Add event listeners to copy buttons
+                    document.querySelectorAll('.copy-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const nameToCopy = this.getAttribute('data-name');
+                            navigator.clipboard.writeText(nameToCopy).then(() => {
+                                this.innerHTML = '<i class="fas fa-check"></i>';
+                                this.classList.remove('text-gray-400', 'hover:text-black');
+                                this.classList.add('text-green-500');
+                                setTimeout(() => {
+                                    this.innerHTML = '<i class="fas fa-copy"></i>';
+                                    this.classList.add('text-gray-400', 'hover:text-black');
+                                    this.classList.remove('text-green-500');
+                                }, 2000);
+                            });
+                        });
+                    });
+                    
+                    // Show results
+                    resultsContainer.classList.remove('hidden');
+                }, 800);
+            }
+            
+            function copyAllNames() {
+                const names = Array.from(document.querySelectorAll('.copy-btn')).map(btn => btn.getAttribute('data-name'));
+                if (names.length === 0) return;
+                
+                navigator.clipboard.writeText(names.join('\n')).then(() => {
+                    copyAllBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    copyAllBtn.classList.remove('text-gray-600');
+                    copyAllBtn.classList.add('text-green-500');
+                    setTimeout(() => {
+                        copyAllBtn.innerHTML = '<i class="fas fa-copy"></i> Copy All';
+                        copyAllBtn.classList.add('text-gray-600');
+                        copyAllBtn.classList.remove('text-green-500');
+                    }, 2000);
+                });
+            }
+        });
+    </script>
 </body>
 </html>
-
